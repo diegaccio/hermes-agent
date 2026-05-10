@@ -108,6 +108,7 @@ RUN uv pip install --no-cache-dir --no-deps -e "."
 # ---------- Runtime ----------
 ENV HERMES_WEB_DIST=/opt/hermes/hermes_cli/web_dist
 ENV HERMES_HOME=/opt/data
-ENV PATH="/opt/data/.local/bin:${PATH}"
+ENV PATH="/opt/data/.local/bin:/opt/hermes/.venv/bin:${PATH}"
+RUN printf '%s\n' 'export PATH="/opt/data/.local/bin:/opt/hermes/.venv/bin:$PATH"' > /etc/profile.d/hermes-path.sh
 VOLUME [ "/opt/data" ]
 ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh" ]

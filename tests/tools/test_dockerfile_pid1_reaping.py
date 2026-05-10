@@ -128,6 +128,33 @@ def test_dockerfile_builds_tui_assets(dockerfile_text):
     )
 
 
+def test_dockerfile_exposes_venv_cli_on_runtime_path(dockerfile_text):
+    env_lines = [
+        line.strip()
+        for line in dockerfile_text.splitlines()
+        if line.strip().startswith("ENV PATH=")
+    ]
+
+    assert env_lines, "Dockerfile must define a runtime PATH"
+    assert any("/opt/hermes/.venv/bin" in line for line in env_lines), (
+        "Dockerfile must add /opt/hermes/.venv/bin to PATH so `docker exec ... hermes` "
+        "and external interactive shells can resolve the CLI without entrypoint-time "
+        "virtualenv activation. See issues #9792 and #18673."
+    )
+
+
+def test_dockerfile_preserves_venv_cli_in_login_shells(dockerfile_text):
+    assert "/etc/profile.d/hermes-path.sh" in dockerfile_text, (
+        "Dockerfile must install a profile.d PATH hook so login shells keep "
+        "/opt/hermes/.venv/bin after /etc/profile resets PATH. See issues "
+        "#9792 and #18673."
+    )
+    assert "export PATH=\"/opt/data/.local/bin:/opt/hermes/.venv/bin:$PATH\"" in dockerfile_text, (
+        "Dockerfile login-shell PATH hook must restore /opt/hermes/.venv/bin so "
+        "`docker exec ... bash -l -c \"hermes\"` works without an absolute path."
+    )
+
+
 def test_dockerfile_materializes_local_tui_ink_package(dockerfile_text):
     # ``hermes-ink`` is a bundled workspace package referenced from
     # ``ui-tui/package.json`` via ``file:`` — not pulled from the npm
